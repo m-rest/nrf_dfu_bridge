@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Public repository coordinates can be overridden for forks or tagged releases.
 REPOSITORY="${NRF_DFU_BRIDGE_REPOSITORY:-OWNER/REPOSITORY}"
-REF="${NRF_DFU_BRIDGE_REF:-main}"
+REF="${NRF_DFU_BRIDGE_REF:-v0.1.0}"
 TARGET_DIR="${NRF_DFU_BRIDGE_TARGET:-$PWD/.nrf-dfu-bridge}"
 
 if [[ "$REPOSITORY" == "OWNER/REPOSITORY" ]]; then

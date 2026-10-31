@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPOSITORY="${NRF_DFU_BRIDGE_REPOSITORY:-m-rest/nrf_dfu_bridge}"
-REF="${NRF_DFU_BRIDGE_REF:-main}"
+REF="${NRF_DFU_BRIDGE_REF:-v0.1.0}"
 RAW_BASE="https://raw.githubusercontent.com/${REPOSITORY}/${REF}"
 
 APP_DIR="$HOME/.local/share/nrf-dfu-bridge"
