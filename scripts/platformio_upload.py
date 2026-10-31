@@ -3,16 +3,27 @@ Import("env")
 import os
 import sys
 
-# This script lives in <project>/.nrf-dfu-bridge/scripts/.
-bridge_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-upload_script = os.path.join(bridge_dir, "scripts", "nrf_dfu_upload.py")
-board_config = os.path.join(bridge_dir, "boards", "xiao_nrf52840.json")
+project_dir = env.subst("$PROJECT_DIR")
+bridge_dir = os.path.join(project_dir, ".nrf-dfu-bridge")
+
+upload_script = os.path.join(
+    bridge_dir,
+    "scripts",
+    "nrf_dfu_upload.py"
+)
+
+config_file = os.path.join(
+    bridge_dir,
+    "boards",
+    "xiao_nrf52840.json"
+)
 
 command = '"{}" "{}" "$SOURCE" "{}"'.format(
     sys.executable,
     upload_script,
-    board_config,
+    config_file
 )
 
 env.Replace(UPLOADCMD=command)
-print("NRF DFU Bridge upload aktiviert")
+
+print("NRF DFU Bridge upload configured")
