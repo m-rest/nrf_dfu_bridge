@@ -54,7 +54,7 @@ You do **not** need to download the platform, ARM GCC toolchain, or Adafruit nrf
 
 The first build therefore needs network access and can take longer than subsequent builds. PlatformIO caches the downloaded platform and packages in its Core directory (normally `~/.platformio`). If you use a non-default PlatformIO Core directory, set `PLATFORMIO_CORE_DIR` consistently for both PlatformIO and the uploader.
 
-## Install into an existing PlatformIO project
+## Install into an existing PlatformIO project in your container
 
 Run this from the root of your existing PlatformIO firmware project.
 
