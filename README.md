@@ -193,9 +193,26 @@ Keep the agent running during firmware upload.
 
 For another nRF52 board, create a separate board profile with the correct USB identifiers, reset behavior and Nordic DFU metadata. The uploader currently supports the `nordic_serial` backend only; a different bootloader may require a different backend. Feel free to contribute.
 
+
 ## Security
 
 RFC2217 is unauthenticated and unencrypted. The agent binds to loopback (`127.0.0.1`) by default. Do not bind it to `0.0.0.0` or expose TCP port 2217 to an untrusted network.
+
+### Uninstall
+
+Run the uninstall script:
+
+```bash
+mac-agent/uninstall-mac-agent.sh
+```
+
+This removes the Mac agent and launcher but keeps your local configuration.
+
+To remove the configuration as well:
+
+```bash
+mac-agent/uninstall-mac-agent.sh --purge-config
+```
 
 ## Limitations
 
