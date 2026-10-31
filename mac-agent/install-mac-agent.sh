@@ -4,9 +4,10 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP_DIR="$HOME/.local/share/nrf-dfu-bridge"
 CONFIG_DIR="$HOME/.config/nrf-dfu-bridge"
+BIN_DIR="$HOME/.local/bin"
 VENV="$APP_DIR/venv"
 
-mkdir -p "$APP_DIR" "$CONFIG_DIR"
+mkdir -p "$APP_DIR" "$CONFIG_DIR" "$BIN_DIR"
 cp "$REPO_ROOT/mac-agent/nrf_serial_agent.py" "$APP_DIR/nrf_serial_agent.py"
 chmod +x "$APP_DIR/nrf_serial_agent.py"
 
@@ -23,16 +24,11 @@ fi
 "$VENV/bin/python" -m pip install --upgrade pip
 "$VENV/bin/python" -m pip install -r "$REPO_ROOT/requirements-mac.txt"
 
-cat > "$APP_DIR/start-agent.command" <<'COMMAND'
-#!/bin/bash
-set -euo pipefail
-APP_DIR="$HOME/.local/share/nrf-dfu-bridge"
-CONFIG="$HOME/.config/nrf-dfu-bridge/xiao_nrf52840.json"
-"$APP_DIR/venv/bin/python" "$APP_DIR/nrf_serial_agent.py" --config "$CONFIG" -vv
-COMMAND
-chmod +x "$APP_DIR/start-agent.command"
+cp "$REPO_ROOT/mac-agent/nrf-dfu-bridge" "$BIN_DIR/nrf-dfu-bridge"
+chmod +x "$BIN_DIR/nrf-dfu-bridge"
 
 echo
 echo "Installation complete."
 echo "1. Review: $CONFIG_DIR/xiao_nrf52840.json"
-echo "2. Start:  open $APP_DIR/start-agent.command"
+echo "2. Start:  $BIN_DIR/nrf-dfu-bridge"
+echo "   Ensure $BIN_DIR is in your PATH, or use the full path above."

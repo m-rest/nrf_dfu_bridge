@@ -156,18 +156,18 @@ List available serial devices with:
 ~/.local/share/nrf-dfu-bridge/venv/bin/python -m serial.tools.list_ports -v
 ```
 
-Start the agent:
+Start the agent from a terminal:
 
 ```bash
-open ~/.local/share/nrf-dfu-bridge/start-agent.command
+~/.local/bin/nrf-dfu-bridge
 ```
 
-Or run it in a terminal:
+The installer places a small Python executable at `~/.local/bin/nrf-dfu-bridge`. It starts the existing agent source from its virtual environment and uses the existing JSON configuration at `~/.config/nrf-dfu-bridge/xiao_nrf52840.json`. The agent source itself is not split or rewritten.
+
+If `~/.local/bin` is not already in your shell `PATH`, add this to `~/.zprofile`:
 
 ```bash
-~/.local/share/nrf-dfu-bridge/venv/bin/python \\
-  ~/.local/share/nrf-dfu-bridge/nrf_serial_agent.py \\
-  --config ~/.config/nrf-dfu-bridge/xiao_nrf52840.json -vv
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
 Keep the agent running during firmware upload.
