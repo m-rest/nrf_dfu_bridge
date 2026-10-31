@@ -1,14 +1,14 @@
 # nRF DFU Bridge
 
-Upload firmware to an nRF52 board connected by USB to a macOS host while building from a Linux development container. The bridge transports the serial connection over RFC2217/TCP and uses Nordic Serial DFU.
+Flash an nRF52 board connected by USB to a macOS host while building firmware in a Linux development container. The bridge forwards the board's USB serial connection over RFC2217/TCP and uploads firmware using Nordic Serial DFU.
 
-**Included board example:** Seeed XIAO nRF52840 with the Nordic serial bootloader; the board definition and DFU metadata are board-specific.
+The included example targets the **Seeed XIAO nRF52840 with its Nordic serial bootloader**. Other boards may need different USB identifiers, reset handling or DFU metadata.
 
 ## How it works
 
 ```text
-macOS host                              Linux Dev Container
-──────────                              ───────────────────
+macOS host                              Linux development container
+──────────                              ───────────────────────────
 USB-connected nRF52                     PlatformIO project
     │                                       │
     ▼                                       ▼
@@ -18,77 +18,168 @@ nrf_serial_agent.py  ◄── RFC2217/TCP ──► nrf_dfu_upload.py
 USB serial port                       ELF → HEX → Nordic DFU ZIP
 ```
 
-The Mac agent exclusively owns the physical USB serial port and exposes it through an RFC2217 endpoint. The container-side uploader creates a Nordic DFU package and sends it through that endpoint. The uploader accepts the endpoint through `NRF_DFU_BRIDGE_URL`, so it does not need to know whether the container runs under Lima, Docker, Podman or another runtime.
+The Mac agent owns the physical USB serial port and exposes it through an RFC2217 TCP endpoint. The container-side uploader builds a Nordic DFU package and sends it through that endpoint.
+
+The uploader uses `NRF_DFU_BRIDGE_URL` when set. Otherwise, it uses the URL in the board JSON. This keeps runtime-specific host-gateway details out of the shared uploader code.
 
 ## Requirements
 
 ### macOS host
 
-- macOS with Python 3 and `venv`
+- macOS with Python 3 and `venv` (Python 3.9 or newer)
 - The target board connected by USB
-- Permission to access its USB serial device
-- A host/container network route that allows the Dev Container to reach the agent's TCP port (default `2217`)
+- Permission to access the board's USB serial device
+- A network route from the container to the Mac agent's TCP port (default: `2217`)
 
-The Mac agent requires only `pyserial==3.5`. Its installer creates an isolated virtual environment.
+The Mac agent uses `pyserial==3.5`. The installer creates an isolated Python virtual environment.
 
-### Linux Dev Container
+### Linux development container
 
 - Linux with Bash
 - Python 3.10 or newer, including `venv` and `pip`
-- `curl`, `tar`, and CA certificates
-- `git` (PlatformIO may use it to fetch Git-based platforms)
+- `curl`, `tar`, CA certificates and `git`
 - Network access to GitHub and the PlatformIO package registry
 
-For Debian/Ubuntu-based containers, install the OS prerequisites with:
+On Debian/Ubuntu-based containers, install the prerequisites with:
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y bash ca-certificates curl git python3 python3-pip python3-venv tar
 ```
 
-PlatformIO Core 6.2.0 is installed into an isolated environment by the installer if `pio` is not already available. The installer installs `pyserial==3.5` into the Python interpreter used by PlatformIO Core.
+If PlatformIO Core is not already installed, the container installer creates an isolated environment at `~/.platformio/penv` and installs PlatformIO Core 6.2.0. It also installs `pyserial==3.5` into the Python environment used by PlatformIO.
 
-### Downloading the platform and build dependencies
+## Installation
 
-You do **not** need to download the platform, ARM GCC toolchain, or Adafruit nrfutil manually. The XIAO example environment in `platformio.ini` points PlatformIO to Seeed's public `platform-seeedboards` Git repository. When you run the first PlatformIO build, PlatformIO fetches that platform and resolves/downloads its declared packages, including the ARM toolchain and the Adafruit nrfutil package used by the DFU uploader.
+### 1. Install the bridge in your Linux container
 
-The first build therefore needs network access and can take longer than subsequent builds. PlatformIO caches the downloaded platform and packages in its Core directory (normally `~/.platformio`). If you use a non-default PlatformIO Core directory, set `PLATFORMIO_CORE_DIR` consistently for both PlatformIO and the uploader.
-
-## Install into an existing PlatformIO project in your container
-
-Run this from the root of your existing PlatformIO firmware project.
+Run this from the root of your existing PlatformIO project:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/m-rest/nrf_dfu_bridge/main/install-container.sh \
   | NRF_DFU_BRIDGE_REPOSITORY=m-rest/nrf_dfu_bridge bash
 ```
 
-This downloads the source archive. The bridge files are installed into:
+The bridge files are installed into:
 
 ```text
 <your-platformio-project>/.nrf-dfu-bridge/
 ```
 
-If PlatformIO Core is not installed, the script creates an isolated environment at `~/.platformio/penv` and installs PlatformIO Core 6.2.0 there. Add its CLI to your shell path:
+If the installer creates the PlatformIO environment, add its CLI to your `PATH`:
 
 ```bash
 export PATH="$HOME/.platformio/penv/bin:$PATH"
 ```
 
-If PlatformIO uses a non-default Python interpreter, set `PLATFORMIO_PYTHON=/path/to/python` before `bash` in the pipeline. The installer prints the selected interpreter and installation directory.
+To make this permanent, add the export to your shell startup file. If PlatformIO uses a non-default Python interpreter, set `PLATFORMIO_PYTHON` when running the installer. The installer prints the selected interpreter and installation directory.
+
+### 2. Install the Mac agent
+
+Check out or download this repository on the Mac. From the repository directory, run:
+
+```bash
+./mac-agent/install-mac-agent.sh
+```
+
+The installer:
+
+- Installs the agent and its virtual environment under `~/.local/share/nrf-dfu-bridge/`
+- Creates the local board configuration at `~/.config/nrf-dfu-bridge/xiao_nrf52840.json` if it does not already exist
+- Installs the launcher at `~/.local/bin/nrf-dfu-bridge`
+
+An existing local configuration is kept; the installer does not overwrite it.
+
+Start the agent from a terminal:
+
+```bash
+~/.local/bin/nrf-dfu-bridge
+```
+
+If `~/.local/bin` is not in your `PATH`, add this to `~/.zprofile` and open a new terminal:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Keep the agent running while building and uploading firmware.
+
+## Configuration
+
+The board profile is JSON:
+
+- In the container: `.nrf-dfu-bridge/boards/xiao_nrf52840.json`
+- On the Mac: `~/.config/nrf-dfu-bridge/xiao_nrf52840.json`
+
+The Mac installer initially copies the repository's board profile to the local configuration path. The two files are separate copies: update the settings on the side where they are used. The container uploader reads the project copy; the Mac agent reads the Mac-local copy.
+
+The profile contains:
+
+- `connection`: RFC2217 URL, normal baud rate and 1200-baud reset rate
+- `usb`: application and bootloader USB VID/PID, plus optional serial-number and bootloader-port filters
+- `agent`: Mac listener address, TCP port and USB-device polling timings
+- `dfu`: backend and Nordic DFU metadata
+
+### Set the container-reachable RFC2217 URL
+
+The example profile contains a placeholder URL:
+
+```json
+"url": "rfc2217://YOUR_HOST_GATEWAY:2217"
+```
+
+Set `NRF_DFU_BRIDGE_URL` in the container to the address that the container can actually reach. For example:
+
+```bash
+export NRF_DFU_BRIDGE_URL="rfc2217://host.lima.internal:2217"
+```
+
+Other common environments may use `host.docker.internal` or a host-gateway address configured for the container runtime. The correct hostname depends on your setup.
+
+You can also set the variable for a single upload command:
+
+```bash
+NRF_DFU_BRIDGE_URL="rfc2217://host.lima.internal:2217" \
+  pio run -e seeed_xiao_nrf52840_sense -t upload
+```
+
+### Configure USB device selection on the Mac
+
+The public board profile does not contain a personal USB serial number or machine-specific device path. If needed, edit the Mac-local file:
+
+```text
+~/.config/nrf-dfu-bridge/xiao_nrf52840.json
+```
+
+Set `usb.serial_number` if the board reports the same USB serial number in application and bootloader modes. Alternatively, set `usb.bootloader_port` if macOS exposes a stable callout path for the bootloader. Both values are optional; leave them as `null` if VID/PID matching identifies the board reliably.
+
+Example values:
+
+```json
+"serial_number": "YOUR_DEVICE_SERIAL_NUMBER",
+"bootloader_port": "/dev/cu.YOUR_DEVICE_PORT"
+```
+
+To inspect serial devices and their USB details:
+
+```bash
+~/.local/share/nrf-dfu-bridge/venv/bin/python -m serial.tools.list_ports -v
+```
+
+### Agent listen address
+
+The agent listens on `127.0.0.1:2217` by default. This is preferred when your container runtime can reach the host's loopback interface. If your setup requires another interface, change `agent.bind` in the Mac-local board configuration. Only do this on a trusted network; RFC2217 has no authentication or encryption.
 
 ## Configure PlatformIO
 
-In the environment used for the target board, add these settings while keeping your existing project options:
+In the relevant environment in your project's `platformio.ini`, add:
 
 ```ini
 upload_protocol = custom
 extra_scripts = post:.nrf-dfu-bridge/scripts/platformio_upload.py
 ```
 
-### Seeed XIAO nRF52840 example
-
-The following is a complete example for the supported XIAO target:
+For the included Seeed XIAO nRF52840 example, the environment looks like this:
 
 ```ini
 [env:seeed_xiao_nrf52840_sense]
@@ -102,6 +193,10 @@ platform_packages =
     toolchain-gccarmnoneeabi @ 1.140201.0
 ```
 
+Keep your existing project settings and add the two upload settings to the appropriate environment.
+
+PlatformIO downloads the Seeed platform and its declared build packages, including the ARM toolchain and Adafruit nrfutil, during the first build. You do not need to install those packages manually. The first build requires network access and may take longer than subsequent builds.
+
 Build and upload from the project root:
 
 ```bash
@@ -109,117 +204,54 @@ pio run -e seeed_xiao_nrf52840_sense
 pio run -e seeed_xiao_nrf52840_sense -t upload
 ```
 
-Use the same PlatformIO Core installation for the CLI and the VS Code PlatformIO extension. If the extension uses a different Core/Python environment, install `pyserial==3.5` into that environment too or configure the extension to use the same Core.
+Use the same PlatformIO Core installation from the CLI and the VS Code PlatformIO extension. If they use different Python environments, make sure `pyserial==3.5` is installed in the Python environment used by PlatformIO.
 
-## Configure the RFC2217 endpoint
-
-The board template at `.nrf-dfu-bridge/boards/xiao_nrf52840.json` uses a placeholder host-gateway address:
-
-```json
-"url": "rfc2217://YOUR_HOST_GATEWAY:2217"
-```
-
-Host-gateway names vary by runtime and configuration. `host.docker.internal` is commonly used with Docker Desktop; Lima/Colima environments may provide `host.lima.internal`. On Linux Docker Engine, you may need to configure a host-gateway mapping or use the host's reachable address. The required value is the hostname/IP and port that the container can actually reach.
-
-The Mac agent binds to `127.0.0.1` by default. This is appropriate when the container runtime forwards host loopback traffic to the host. If your runtime requires the agent to listen on another interface, change `agent.bind` in the Mac-local config only after considering the security implications. Do not expose the serial bridge to a public or untrusted network.
-
-## Install the Mac agent
-
-Download or check out the project on the Mac, then run:
-
-```bash
-./mac-agent/install-mac-agent.sh
-```
-
-The installer copies the agent to `~/.local/share/nrf-dfu-bridge/`, creates a local config at:
-
-```text
-~/.config/nrf-dfu-bridge/
-```
-
-It does not overwrite an existing local config. It creates a virtual environment and installs `pyserial==3.5`.
-
-### Configure USB identification on macOS
-
-The public board template contains no personal USB serial number or machine-specific device path. Edit the Mac-local config. Configure `serial_number` if the USB serial number is stable in both application and bootloader modes. If macOS uses a stable callout path across the transition, you can instead set `bootloader_port`. Both are optional; leave them `null` if VID/PID detection is sufficient.
-
-Example values only:
-
-```json
-"serial_number": "YOUR_DEVICE_SERIAL_NUMBER",
-"bootloader_port": "/dev/cu.YOUR_DEVICE_PORT"
-```
-
-List available serial devices with:
-
-```bash
-~/.local/share/nrf-dfu-bridge/venv/bin/python -m serial.tools.list_ports -v
-```
-
-Start the agent from a terminal:
-
-```bash
-~/.local/bin/nrf-dfu-bridge
-```
-
-The installer places a small Python executable at `~/.local/bin/nrf-dfu-bridge`. It starts the existing agent source from its virtual environment and uses the existing JSON configuration at `~/.config/nrf-dfu-bridge/xiao_nrf52840.json`. The agent source itself is not split or rewritten.
-
-If `~/.local/bin` is not already in your shell `PATH`, add this to `~/.zprofile`:
-
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-Keep the agent running during firmware upload.
+If you use a non-default PlatformIO Core directory, set `PLATFORMIO_CORE_DIR` consistently for PlatformIO and the uploader.
 
 ## Upload sequence
 
-1. PlatformIO compiles the firmware and produces `firmware.elf`.
-2. The uploader converts the ELF to Intel HEX using ARM `objcopy`.
-3. Adafruit nrfutil creates the Nordic DFU ZIP using the board's configured device type and SoftDevice requirement.
+1. PlatformIO builds the firmware and produces `firmware.elf`.
+2. The uploader converts the ELF file to Intel HEX using ARM `objcopy`.
+3. Adafruit nrfutil creates the Nordic DFU ZIP using the board's DFU metadata.
 4. The uploader opens the RFC2217 endpoint at 1200 baud to trigger the bootloader transition.
 5. The Mac agent detects the bootloader USB interface and opens it for the next RFC2217 session.
 6. Adafruit nrfutil transfers the DFU package at the configured baud rate.
 
-## Board-specific configuration
+## Troubleshooting
 
-`boards/xiao_nrf52840.json` is an example board profile. It contains:
+- **Connection refused:** Check that the Mac agent is running and that `NRF_DFU_BRIDGE_URL` points to the host address and port reachable from the container.
+- **USB device not found:** Check the USB VID/PID values and, if necessary, configure `usb.serial_number` or `usb.bootloader_port` in the Mac-local board profile. The agent logs the detected USB serial devices when selection times out.
+- **Upload works from the CLI but not from VS Code:** Check whether the extension uses a different PlatformIO Core or Python environment. Install `pyserial==3.5` into the environment used by that Core.
+- **First build fails while downloading packages:** Check network access to GitHub and the PlatformIO package registry.
 
-- RFC2217 endpoint and baud rates
-- Application and bootloader USB VID/PID
-- Optional USB serial number and fixed bootloader port
-- Mac agent bind address and timing
-- Nordic DFU device type, SoftDevice requirement and single-bank setting
+## Uninstall
 
-For another nRF52 board, create a separate board profile with the correct USB identifiers, reset behavior and Nordic DFU metadata. The uploader currently supports the `nordic_serial` backend only; a different bootloader may require a different backend. Feel free to contribute.
-
-
-## Security
-
-RFC2217 is unauthenticated and unencrypted. The agent binds to loopback (`127.0.0.1`) by default. Do not bind it to `0.0.0.0` or expose TCP port 2217 to an untrusted network.
-
-### Uninstall
-
-Run the uninstall script:
+On the Mac, run the uninstall script from the repository directory:
 
 ```bash
 mac-agent/uninstall-mac-agent.sh
 ```
 
-This removes the Mac agent and launcher but keeps your local configuration.
+This removes the installed agent, virtual environment and launcher while keeping the local configuration.
 
-To remove the configuration as well:
+To remove the local configuration as well:
 
 ```bash
 mac-agent/uninstall-mac-agent.sh --purge-config
 ```
 
+The container-side files can be removed by deleting `.nrf-dfu-bridge/` from your PlatformIO project.
+
+## Security
+
+RFC2217 is unauthenticated and unencrypted. The agent binds to `127.0.0.1` by default. Do not bind it to `0.0.0.0` or expose TCP port `2217` to an untrusted network.
+
 ## Limitations
 
 - The included board profile is intended for the Seeed XIAO nRF52840 with the supported Nordic serial bootloader.
-- Only Nordic Serial DFU is implemented.
-- Other nRF boards may use different bootloaders, USB transitions, DFU metadata or upload protocols and need their own configuration and testing.
-- Host-gateway names are runtime-specific. Set `NRF_DFU_BRIDGE_URL` to the endpoint reachable from your container.
+- Only the `nordic_serial` DFU backend is implemented.
+- Other nRF boards may require different USB identifiers, reset behavior, DFU metadata or upload handling, and need their own configuration and testing.
+- Host-gateway names vary by container runtime. Set `NRF_DFU_BRIDGE_URL` to the endpoint reachable from your container.
 
 ## License
 
