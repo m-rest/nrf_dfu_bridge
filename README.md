@@ -76,19 +76,19 @@ To make this permanent, add the export to your shell startup file. If PlatformIO
 
 ### 2. Install the Mac agent
 
-Check out or download this repository on the Mac. From the repository directory, run:
+Run this on the Mac:
 
 ```bash
-./mac-agent/install-mac-agent.sh
+curl -fsSL https://raw.githubusercontent.com/m-rest/nrf_dfu_bridge/main/mac-agent/install-mac-agent.sh | bash
 ```
 
-The installer:
+The installer downloads the agent, board profile, requirements and launcher from the repository's `main` branch. It then:
 
 - Installs the agent and its virtual environment under `~/.local/share/nrf-dfu-bridge/`
-- Creates the local board configuration at `~/.config/nrf-dfu-bridge/xiao_nrf52840.json` if it does not already exist
+- Creates `~/.config/nrf-dfu-bridge/xiao_nrf52840.json` only if it does not already exist
 - Installs the launcher at `~/.local/bin/nrf-dfu-bridge`
 
-An existing local configuration is kept; the installer does not overwrite it.
+An existing local configuration is kept; the installer does not overwrite it. The installer requires Python 3.9 or newer and `curl`.
 
 Start the agent from a terminal:
 
@@ -226,18 +226,18 @@ If you use a non-default PlatformIO Core directory, set `PLATFORMIO_CORE_DIR` co
 
 ## Uninstall
 
-On the Mac, run the uninstall script from the repository directory:
+On the Mac, download and run the uninstaller:
 
 ```bash
-mac-agent/uninstall-mac-agent.sh
+curl -fsSL https://raw.githubusercontent.com/m-rest/nrf_dfu_bridge/main/mac-agent/uninstall-mac-agent.sh \
+  -o /tmp/uninstall-nrf-dfu-bridge.sh
+bash /tmp/uninstall-nrf-dfu-bridge.sh
 ```
 
-This removes the installed agent, virtual environment and launcher while keeping the local configuration.
-
-To remove the local configuration as well:
+This removes the installed agent, virtual environment and launcher while keeping the local configuration. To remove the configuration as well, pass `--purge-config`:
 
 ```bash
-mac-agent/uninstall-mac-agent.sh --purge-config
+bash /tmp/uninstall-nrf-dfu-bridge.sh --purge-config
 ```
 
 The container-side files can be removed by deleting `.nrf-dfu-bridge/` from your PlatformIO project.
