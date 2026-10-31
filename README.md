@@ -56,7 +56,7 @@ If PlatformIO Core is not already installed, the container installer creates an 
 Run this from the root of your existing PlatformIO project:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/m-rest/nrf_dfu_bridge/main/install-container.sh \
+curl -fsSL https://raw.githubusercontent.com/m-rest/nrf_dfu_bridge/v0.1.0/install-container.sh \
   | NRF_DFU_BRIDGE_REPOSITORY=m-rest/nrf_dfu_bridge bash
 ```
 
@@ -79,7 +79,7 @@ To make this permanent, add the export to your shell startup file. If PlatformIO
 Run this on the Mac:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/m-rest/nrf_dfu_bridge/main/mac-agent/install-mac-agent.sh | bash
+curl -fsSL https://raw.githubusercontent.com/m-rest/nrf_dfu_bridge/v0.1.0/mac-agent/install-mac-agent.sh | bash
 ```
 
 The installer downloads the agent, board profile, requirements and launcher from the repository's `main` branch. It then:
@@ -229,7 +229,7 @@ If you use a non-default PlatformIO Core directory, set `PLATFORMIO_CORE_DIR` co
 On the Mac, download and run the uninstaller:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/m-rest/nrf_dfu_bridge/main/mac-agent/uninstall-mac-agent.sh \
+curl -fsSL https://raw.githubusercontent.com/m-rest/nrf_dfu_bridge/v0.1.0/mac-agent/uninstall-mac-agent.sh \
   -o /tmp/uninstall-nrf-dfu-bridge.sh
 bash /tmp/uninstall-nrf-dfu-bridge.sh
 ```
