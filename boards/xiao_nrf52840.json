@@ -1,0 +1,28 @@
+{
+  "name": "Seeed XIAO nRF52840",
+  "connection": {
+    "url": "rfc2217://YOUR_HOST_GATEWAY:2217",
+    "baudrate": 115200,
+    "reset_baudrate": 1200
+  },
+  "usb": {
+    "app_vid": "0x2886",
+    "app_pid": "0x8044",
+    "boot_vid": "0x2886",
+    "boot_pid": "0x0064",
+    "serial_number": null,
+    "bootloader_port": null
+  },
+  "agent": {
+    "bind": "127.0.0.1",
+    "port": 2217,
+    "device_timeout": 1.5,
+    "poll_interval": 0.1
+  },
+  "dfu": {
+    "backend": "nordic_serial",
+    "device_type": "0x0052",
+    "softdevice_id": "0x0123",
+    "singlebank": true
+  }
+}
