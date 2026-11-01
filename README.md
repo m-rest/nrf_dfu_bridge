@@ -2,6 +2,8 @@
 
 Flash an nRF52 board connected by USB to a macOS host while building firmware in a Linux development container. The bridge forwards the board's USB serial connection over RFC2217/TCP and uploads firmware using Nordic Serial DFU.
 
+Bonus feature: serial monitor works backwards out of the box on the same port.
+
 The included example targets the **Seeed XIAO nRF52840 with its Nordic serial bootloader**. Other boards may need different USB identifiers, reset handling or DFU metadata.
 
 ## How it works
