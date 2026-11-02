@@ -26,5 +26,5 @@ if not agent.is_file():
 
 os.execv(
     str(python),
-    [str(python), str(agent), "--config", str(config), "-vv", *sys.argv[1:]],
+    [str(python), str(agent), "--config", str(config), "-v", *sys.argv[1:]],
 )
