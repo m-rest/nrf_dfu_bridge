@@ -22,6 +22,8 @@ nrf_serial_agent.py  ◄── RFC2217:2217 ──► nrf_dfu_upload.py
      │                                       ▼
      │                                  ELF → HEX → Nordic DFU ZIP
      │
+     │
+     │
      └─────────────  ◄── RFC2217:2218 ──► Serial monitor
 ```
 
