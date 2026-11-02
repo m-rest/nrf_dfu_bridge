@@ -15,7 +15,8 @@
   },
   "agent": {
     "bind": "127.0.0.1",
-    "port": 2217,
+    "dfu_tcp_port": 2217,
+    "monitor_tcp_port": 2218,
     "device_timeout": 1.5,
     "poll_interval": 0.1
   },
