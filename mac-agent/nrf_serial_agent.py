@@ -509,14 +509,14 @@ def serve(config: dict, stop_event: threading.Event, verbose: int) -> None:
     LOG.info("Board: %s", config.get("name", "unnamed"))
     connection, agent = config["connection"], config["agent"]
     bind = agent.get("bind", "127.0.0.1")
-    tcp_port = int(agent.get("port", 2217))
-    monitor_port = int(agent.get("monitor_port", 2218))
+    tcp_port = int(agent["dfu_tcp_port"])
+    monitor_port = int(agent["monitor_tcp_port"])
     default_baud = int(connection["baudrate"])
     touch_baud = int(connection["reset_baudrate"])
     timeout = float(agent.get("device_timeout", 1.5))
     poll_interval = float(agent.get("poll_interval", 0.1))
     if monitor_port == tcp_port:
-        raise ValueError("agent.monitor_port must differ from agent.port")
+        raise ValueError("agent.dfu_tcp_port and agent.monitor_tcp_port must differ")
 
     listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -616,7 +616,7 @@ def main() -> int:
         if args.bind:
             config["agent"]["bind"] = args.bind
         if args.port:
-            config["agent"]["port"] = args.port
+            config["agent"]["dfu_tcp_port"] = args.port
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         LOG.error("Cannot load configuration: %s", exc)
         return 1
